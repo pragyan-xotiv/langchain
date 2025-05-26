@@ -1,0 +1,23 @@
+{
+  "name": "basic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/community": "^0.3.44",
+    "@langchain/core": "^0.3.57",
+    "@langchain/google-genai": "^0.2.9",
+    "@langchain/langgraph": "^0.2.73",
+    "@langchain/openai": "^0.5.11",
+    "dotenv": "^16.5.0",
+    "openai": "^4.103.0"
+  }
+}
