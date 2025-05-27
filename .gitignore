@@ -1,2 +1,8 @@
 node_modules
 .env
+
+tasks
+ideas
+idea-to-doc
+cursor-settings.md
+.env.*
