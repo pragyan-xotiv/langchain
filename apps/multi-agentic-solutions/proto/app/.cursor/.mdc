@@ -1,0 +1,201 @@
+---
+description: 
+globs: *.ts,*.js
+alwaysApply: false
+---
+{
+  "version": 1,
+  "settings": {
+    "editor": {
+      "formatOnSave": true,
+      "tabSize": 2,
+      "insertSpaces": true,
+      "detectIndentation": false,
+      "rulers": [100],
+      "wordWrap": "off",
+      "bracketPairColorization": true
+    },
+    "typescript": {
+      "preferences": {
+        "quoteStyle": "single",
+        "importModuleSpecifierPreference": "relative"
+      },
+      "suggest": {
+        "completeFunctionCalls": true
+      },
+      "updateImportsOnFileMove": "always",
+      "inlayHints": {
+        "parameterNames": true,
+        "parameterTypes": true,
+        "variableTypes": true,
+        "propertyDeclarationTypes": true,
+        "functionLikeReturnTypes": true
+      }
+    },
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true,
+      "source.fixAll.eslint": true
+    },
+    "search": {
+      "exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.git": true
+      }
+    },
+    "files": {
+      "autoSave": "afterDelay",
+      "autoSaveDelay": 1000,
+      "watcherExclude": {
+        "**/node_modules/**": true,
+        "**/dist/**": true
+      }
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Verify ACID Compliance",
+        "type": "shell",
+        "command": "node",
+        "args": ["scripts/verify-acid.js"],
+        "problemMatcher": []
+      },
+      {
+        "label": "Generate Repository Documentation",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "generate-docs"],
+        "problemMatcher": []
+      },
+      {
+        "label": "Update Documentation",
+        "type": "shell",
+        "command": "npm",
+        "args": ["run", "update-docs"],
+        "problemMatcher": [],
+        "runOptions": {
+          "runOn": "folderOpen"
+        }
+      }
+    ]
+  },
+  "rules": [
+    {
+      "name": "enforce-transaction-boundary",
+      "description": "Ensure database operations are wrapped in transactions",
+      "selector": "CallExpression[callee.property.name=/insert|update|delete/]",
+      "message": "Database operations should be wrapped in transactions",
+      "severity": "warning"
+    },
+    {
+      "name": "enforce-error-handling",
+      "description": "Ensure proper error handling in async functions",
+      "selector": "FunctionDeclaration[async=true] > BlockStatement:not(:has(TryStatement))",
+      "message": "Async functions should include error handling",
+      "severity": "warning"
+    },
+    {
+      "name": "enforce-result-pattern",
+      "description": "Prefer Result pattern for operations that may fail",
+      "selector": "FunctionDeclaration[returnType.typeAnnotation.typeName.name!='Result']",
+      "message": "Consider using Result pattern for this operation",
+      "severity": "suggestion"
+    },
+    {
+      "name": "enforce-document-update",
+      "description": "Ensure document updates are properly versioned",
+      "selector": "CallExpression[callee.property.name='update'][arguments.length<3]",
+      "message": "Document updates should include version for optimistic concurrency control",
+      "severity": "warning"
+    }
+  ],
+  "snippets": {
+    "typescript": {
+      "Transaction Block": {
+        "prefix": "transaction",
+        "body": [
+          "return TransactionManager.transaction(async (client) => {",
+          "  try {",
+          "    $1",
+          "    return $2;",
+          "  } catch (error) {",
+          "    logger.error('Transaction failed', { error, operation: '$3' });",
+          "    throw error;",
+          "  }",
+          "});"
+        ],
+        "description": "Create a transaction block"
+      },
+      "Result Pattern": {
+        "prefix": "result",
+        "body": [
+          "try {",
+          "  $1",
+          "  return Result.ok($2);",
+          "} catch (error) {",
+          "  logger.error('Operation failed', { error, operation: '$3' });",
+          "  return Result.fail(error instanceof Error ? error : new Error(String(error)));",
+          "}"
+        ],
+        "description": "Create a Result pattern block"
+      },
+      "Document Update": {
+        "prefix": "docupdate",
+        "body": [
+          "const { data, error } = await supabase",
+          "  .from('${1:documents}')",
+          "  .update(${2:updates})",
+          "  .match({ id: ${3:id}, 'metadata->version': ${4:version} })",
+          "  .select('id');",
+          "",
+          "if (error) throw error;",
+          "",
+          "// Check if document was updated (version matched)",
+          "return data && data.length > 0;"
+        ],
+        "description": "Create a versioned document update"
+      }
+    }
+  },
+  "watchers": [
+    {
+      "pattern": "**/*.ts",
+      "commands": [
+        {
+          "command": "eslint ${file} --fix",
+          "runIn": "backend",
+          "runOn": "save"
+        }
+      ]
+    },
+    {
+      "pattern": "src/models/**/*.ts",
+      "commands": [
+        {
+          "command": "npm run update-docs",
+          "runIn": "backend",
+          "runOn": "save"
+        }
+      ]
+    },
+    {
+      "pattern": "src/repositories/**/*.ts",
+      "commands": [
+        {
+          "command": "node scripts/verify-acid.js ${file}",
+          "runIn": "backend",
+          "runOn": "save"
+        }
+      ]
+    }
+  ]
+}
