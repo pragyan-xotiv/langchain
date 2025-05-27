@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { config, validateEnvironment } from './config/environment.js';
 import { logger } from './utils/logger.js';
+import knowledgeRoutes from './api/routes/knowledgeRoutes.js';
 
 // Validate that all required environment variables are present
 try {
@@ -21,6 +22,9 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+
+// Routes
+app.use('/api/knowledge', knowledgeRoutes);
 
 // Default route
 app.get('/', (req, res) => {
