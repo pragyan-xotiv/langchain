@@ -1,4 +1,4 @@
-# Multi-Agent Support System: Knowledge Layer
+# Knowledge Layer
 
 This module implements the Knowledge Layer for the Multi-Agent Support System using RAG (Retrieval Augmented Generation). It enables agents to access and query external knowledge stored in vector databases.
 
@@ -45,12 +45,6 @@ Create a `.env` file in the project root with:
 OPENAI_API_KEY=your_openai_api_key
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_supabase_service_key
-```
-
-### Installation
-
-```bash
-npm install
 ```
 
 ### Database Setup
@@ -121,6 +115,8 @@ Unit tests are available with:
 npm test
 ```
 
+For more detailed information about testing approaches, please see [KNOWLEDGE_LAYER_TESTING.md](./KNOWLEDGE_LAYER_TESTING.md).
+
 ## API Reference
 
 ### Document Processor
@@ -156,8 +152,4 @@ getCachedVectorStore(): VectorStoreService
 
 ```typescript
 query(question: string): Promise<string>
-```
-
-## License
-
-MIT
+``` 

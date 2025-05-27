@@ -1,15 +1,18 @@
 {
   "name": "multi-agent-support-system",
   "version": "1.0.0",
-  "description": "Multi-Agent Support System",
+  "description": "A multi-agent system for support and customer service",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "nodemon --exec ts-node src/index.ts",
-    "test": "jest",
-    "lint": "eslint src --ext .ts",
+    "start": "node dist/server.js",
+    "dev": "nodemon --exec tsx src/server.ts",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:knowledge": "tsx ./tests/test-knowledge-layer.ts",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest tests/rag/documentProcessor.test.ts tests/rag/embeddingService.test.ts tests/agents/knowledgeAgent.test.ts tests/environment.test.ts tests/knowledge-layer.test.ts",
+    "test:integration": "NODE_OPTIONS=--experimental-vm-modules jest tests/knowledge-layer.test.ts",
+    "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "setup-db": "ts-node scripts/setup-db.ts"
   },
@@ -45,6 +48,7 @@
     "prettier": "^3.0.0",
     "ts-jest": "^29.0.0",
     "ts-node": "^10.0.0",
+    "tsx": "^4.19.4",
     "typescript": "^5.0.0"
   }
 }
