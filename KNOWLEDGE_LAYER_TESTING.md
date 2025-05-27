@@ -149,7 +149,7 @@ export const createTestLangChainDocuments = (count: number = 3): LangChainDocume
   }));
 };
 
-export const createTestEmbeddings = (count: number = 3, dimensions: number = 1536): DocumentWithEmbedding[] => {
+export const createTestEmbeddings = (count: number = 3, dimensions: number = 3072): DocumentWithEmbedding[] => {
   return Array.from({ length: count }, (_, i) => ({
     pageContent: `Test document content ${i + 1}`,
     metadata: { id: `doc-${i + 1}`, source: `source-${i + 1}`, page: i + 1 },

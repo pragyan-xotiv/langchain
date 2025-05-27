@@ -1,71 +1,59 @@
-import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Document as LangChainDocument } from '@langchain/core/documents';
-import supabaseClient from '../utils/supabase.js';
 import { config } from '../config/environment.js';
 import { logger } from '../utils/logger.js';
 import { DocumentWithEmbedding } from './embeddingService.js';
+import { DocumentRepository } from '../services/supabase/documentRepository.js';
+
+/**
+ * Interface for document match results from the match_documents function
+ */
+interface DocumentMatch {
+  id: string;
+  document_id: string;
+  content: string;
+  metadata: Record<string, any>;
+  similarity: number;
+}
 
 /**
  * VectorStore service for Supabase pgvector
  */
 export class VectorStoreService {
-  private vectorStore: SupabaseVectorStore;
   private embeddings: OpenAIEmbeddings;
+  private documentRepository: DocumentRepository;
   
   constructor() {
     this.embeddings = new OpenAIEmbeddings({
       openAIApiKey: config.llm.openaiApiKey,
       modelName: config.llm.embeddingModel,
     });
-    
-    this.vectorStore = new SupabaseVectorStore(this.embeddings, {
-      client: supabaseClient,
-      tableName: 'documents',
-      queryName: 'match_documents',
-    });
+    this.documentRepository = new DocumentRepository();
   }
   
   /**
    * Store documents with their embeddings in the vector store
    */
-  async storeDocuments(documentsWithEmbeddings: DocumentWithEmbedding[]): Promise<void> {
+  async storeDocuments(documentsWithEmbeddings: DocumentWithEmbedding[]): Promise<string[]> {
     try {
       logger.info('Storing documents in vector store', { count: documentsWithEmbeddings.length });
-      
-      // Process in batches to avoid overwhelming the database
-      const batchSize = 50;
-      
-      for (let i = 0; i < documentsWithEmbeddings.length; i += batchSize) {
-        const batch = documentsWithEmbeddings.slice(i, i + batchSize);
-        
-        // Insert documents with their embeddings
-        const { error } = await supabaseClient
-          .from('documents')
-          .insert(
-            batch.map(item => ({
-              content: item.document.pageContent,
-              metadata: item.document.metadata,
-              embedding: item.embedding
-            }))
-          );
-        
-        if (error) {
-          throw error;
-        }
-        
-        logger.debug(`Stored batch ${Math.floor(i / batchSize) + 1}`, { size: batch.length });
-        
-        // Small delay between batches
-        if (i + batchSize < documentsWithEmbeddings.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-      
-      logger.info('Documents stored successfully');
+      return await this.documentRepository.storeDocuments(documentsWithEmbeddings);
     } catch (error) {
       logger.error('Error storing documents in vector store', { error });
       throw new Error('Failed to store documents: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  }
+  
+  /**
+   * Store a single document with its embedding in the vector store
+   */
+  async storeDocument(documentWithEmbedding: DocumentWithEmbedding): Promise<string> {
+    try {
+      logger.info('Storing single document in vector store');
+      return await this.documentRepository.storeDocument(documentWithEmbedding);
+    } catch (error) {
+      logger.error('Error storing document in vector store', { error });
+      throw new Error('Failed to store document: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
   
@@ -75,9 +63,22 @@ export class VectorStoreService {
   async similaritySearch(query: string, k: number = 5): Promise<LangChainDocument[]> {
     try {
       logger.info('Performing similarity search', { query, k });
-      const results = await this.vectorStore.similaritySearch(query, k);
-      logger.info('Similarity search complete', { resultCount: results.length });
-      return results;
+      
+      // First, get embedding for the query
+      const queryEmbedding = await this.embeddings.embedQuery(query);
+      
+      // Find similar documents
+      const matches = await this.documentRepository.findSimilarDocuments(
+        queryEmbedding,
+        k,
+        0.1 // Lower threshold to get more results
+      );
+      
+      // Convert to LangChain documents
+      const documents = this.documentRepository.toLangChainDocuments(matches);
+      
+      logger.info('Similarity search complete', { resultCount: documents.length });
+      return documents;
     } catch (error) {
       logger.error('Error performing similarity search', { error, query });
       throw new Error('Failed to perform similarity search: ' + (error instanceof Error ? error.message : String(error)));
@@ -95,6 +96,7 @@ export class VectorStoreService {
     const cachedService = new VectorStoreService();
     
     // Override the similarity search method to use cache
+    const originalSearch = this.similaritySearch.bind(this);
     cachedService.similaritySearch = async (query: string, k: number = 5): Promise<LangChainDocument[]> => {
       const cacheKey = `${query}:${k}`;
       const now = Date.now();
@@ -106,8 +108,8 @@ export class VectorStoreService {
         return cachedResult.documents;
       }
       
-      // Perform the search
-      const results = await this.similaritySearch(query, k);
+      // Perform the search using the original method
+      const results = await originalSearch(query, k);
       
       // Cache the result
       cache.set(cacheKey, { documents: results, timestamp: now });

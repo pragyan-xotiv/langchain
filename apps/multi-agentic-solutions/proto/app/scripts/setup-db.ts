@@ -66,7 +66,7 @@ async function setupDatabase() {
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         content TEXT NOT NULL,
         metadata JSONB NOT NULL,
-        embedding VECTOR(1536)
+        embedding VECTOR(3072)
       `
     });
     

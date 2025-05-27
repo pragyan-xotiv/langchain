@@ -24,8 +24,7 @@ export class EmbeddingService {
   constructor() {
     this.embeddings = new OpenAIEmbeddings({
       openAIApiKey: config.llm.openaiApiKey,
-      modelName: config.llm.embeddingModel,
-      maxConcurrency: 5, // Limit concurrent requests
+      modelName: "text-embedding-3-large", // Use the latest model with 3072 dimensions
     });
   }
 
@@ -78,7 +77,7 @@ export class EmbeddingService {
             pageContent: doc.pageContent,
             metadata: {
               ...doc.metadata,
-              embedding_model: config.llm.embeddingModel,
+              embedding_model: "text-embedding-3-large",
               embedding_timestamp: new Date().toISOString()
             }
           });

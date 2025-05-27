@@ -91,9 +91,9 @@ async function runTests() {
   // You can comment out tests that require external dependencies
   await testDocumentProcessing();
   // Uncomment the following tests if you have the required API keys and database setup
-  // await testEmbeddingGeneration();
-  // await testRetriever();
-  // await testKnowledgeAgent();
+  await testEmbeddingGeneration();
+  await testRetriever();
+  await testKnowledgeAgent();
   
   console.log('\n🏁 Tests completed');
 }
