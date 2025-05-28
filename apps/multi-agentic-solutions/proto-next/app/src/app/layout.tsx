@@ -31,6 +31,9 @@ export default function RootLayout({
               <Link href="/dashboard/agents" className="hover:text-blue-300">
                 Agents
               </Link>
+              <Link href="/dashboard/scraper" className="hover:text-blue-300">
+                Scraper
+              </Link>
             </div>
           </div>
         </nav>

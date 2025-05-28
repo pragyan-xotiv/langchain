@@ -1,0 +1,21 @@
+{
+  "name": "web-app-scraper",
+  "version": "0.1.0",
+  "description": "Intelligent web application scraper for RAG knowledge layer",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "example": "ts-node example.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.35.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 

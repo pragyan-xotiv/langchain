@@ -22,6 +22,13 @@ export default function Home() {
         >
           Agents Dashboard
         </Link>
+        
+        <Link 
+          href="/dashboard/scraper" 
+          className="px-6 py-3 bg-purple-500 text-white rounded hover:bg-purple-600 transition"
+        >
+          Web Scraper
+        </Link>
       </div>
     </main>
   );
