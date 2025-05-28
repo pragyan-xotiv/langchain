@@ -82,6 +82,22 @@ SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_KEY=your_supabase_service_key
 ```
 
+### TypeScript Configuration
+
+If you're using decorators in your codebase, you'll need to enable experimental decorator support in your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    // ... other options
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
+> **Note:** Decorators are experimental in TypeScript and can cause issues in Next.js, especially in API routes. Consider using simpler class patterns without decorators for API routes.
+
 ### Database Setup
 
 Run the database setup script to create the necessary tables and vector extension:
@@ -145,60 +161,101 @@ console.log(answer);
 import { NextResponse } from 'next/server';
 import { KnowledgeAgent } from '@/lib/agents/knowledgeAgent';
 
+// Simple handler class without decorators (recommended for Next.js API routes)
+class KnowledgeQueryHandler {
+  private knowledgeAgent: KnowledgeAgent;
+  
+  constructor() {
+    this.knowledgeAgent = new KnowledgeAgent();
+  }
+
+  async handleQuery(question: string): Promise<string> {
+    return this.knowledgeAgent.query(question);
+  }
+}
+
 export async function POST(request: Request) {
-  const { question } = await request.json();
-  const knowledgeAgent = new KnowledgeAgent();
-  const answer = await knowledgeAgent.query(question);
-  return NextResponse.json({ success: true, answer });
+  try {
+    const { question } = await request.json();
+    const handler = new KnowledgeQueryHandler();
+    const answer = await handler.handleQuery(question);
+    return NextResponse.json({ success: true, answer });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    );
+  }
 }
 
 // React Component
 // src/components/knowledge/KnowledgeSearch.tsx
 'use client';
 
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
 function KnowledgeSearch() {
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [submittedQuestion, setSubmittedQuestion] = useState('');
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['knowledge', submittedQuestion],
+    queryFn: async () => {
+      if (!submittedQuestion) return null;
+      
       const response = await fetch('/api/knowledge/query', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question: submittedQuestion }),
       });
       
-      const data = await response.json();
-      setAnswer(data.answer);
-    } catch (error) {
-      console.error('Error querying knowledge base:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+      if (!response.ok) {
+        throw new Error('Failed to query knowledge base');
+      }
+      
+      return response.json();
+    },
+    enabled: !!submittedQuestion,
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmittedQuestion(question);
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        placeholder="Ask a question..."
-      />
-      <button type="submit" disabled={loading}>
-        {loading ? 'Searching...' : 'Search'}
-      </button>
-      
-      {answer && (
-        <div>
-          <h3>Answer:</h3>
-          <p>{answer}</p>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Ask a question..."
+          className="w-full p-2 border rounded"
+        />
+        <button 
+          type="submit"
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Searching...' : 'Search'}
+        </button>
+      </form>
+
+      {error && (
+        <div className="p-4 bg-red-100 text-red-700 rounded">
+          {(error as Error).message}
         </div>
       )}
-    </form>
+
+      {data && data.success && (
+        <div className="p-4 bg-gray-100 rounded">
+          <h3 className="font-bold">Answer:</h3>
+          <p>{data.answer}</p>
+        </div>
+      )}
+    </div>
   );
 }
 ```
@@ -345,6 +402,20 @@ npm test
 npm run dev
 ```
 
+## TypeScript Configuration
+
+If you're using the Next.js implementation and encounter issues with decorators, ensure your `tsconfig.json` has the proper decorator support enabled:
+
+```json
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+    // ... other options
+  }
+}
+```
+
 ## Usage
 
 Please refer to the [KNOWLEDGE_LAYER.md](./KNOWLEDGE_LAYER.md) document for detailed usage instructions for both implementations.
@@ -421,5 +492,7 @@ MIT
 2. Update `KNOWLEDGE_LAYER.md` to include Next.js integration details
 3. Update `README.md` to reflect both implementations
 4. Create additional documentation as needed for the Next.js UI components
+5. Configure TypeScript for decorator support if needed
+6. Consider refactoring code that uses decorators in API routes to simpler patterns
 
 These documentation updates should be created once the initial Next.js implementation is complete, to ensure accuracy and completeness of the documentation. 

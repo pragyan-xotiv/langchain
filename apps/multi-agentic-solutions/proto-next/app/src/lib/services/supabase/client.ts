@@ -1,9 +1,21 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Check for required environment variables
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl) {
+  console.error('SUPABASE_URL environment variable is not set');
+}
+
+if (!supabaseServiceKey) {
+  console.error('SUPABASE_SERVICE_KEY environment variable is not set');
+}
+
 // Initialize Supabase client
 export const supabaseClient = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_KEY || '',
+  supabaseUrl || '',
+  supabaseServiceKey || '',
   {
     auth: {
       persistSession: false,
@@ -13,5 +25,5 @@ export const supabaseClient = createClient(
 
 // Helper to check if Supabase is properly configured
 export function isSupabaseConfigured(): boolean {
-  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY);
+  return !!(supabaseUrl && supabaseServiceKey);
 } 
